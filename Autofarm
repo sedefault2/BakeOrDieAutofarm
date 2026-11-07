@@ -28,19 +28,13 @@ local function getDrops()
 
     local result = filtergc("function", {
         Name = "start",
-        Source = "ReplicatedStorage.Client.createCandyDrops"
+        ConstantCount = 23,
+        UpvalueCount = 16
     }, true)
 
     if not result then return end
 
-    if type(result) == "table" then
-        result = result[1]
-    end
-
-    if type(result) ~= "function" then 
-        warn(result, "is not a function") 
-        return
-    end
+    if type(result) ~= "function" then warn(result, "is not a function") ;return nil end
 
     local drops = getupvalue(result, 6)
 
@@ -93,6 +87,8 @@ if isLobbyPlace() then
 else
 
     local drops = getDrops()
+
+    if not drops then warn("drops dont exist"); return end
 
     local count = 0
     
