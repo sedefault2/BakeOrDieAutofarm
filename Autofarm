@@ -1,0 +1,109 @@
+--local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--RunService:Set3dRenderingEnabled(true)
+
+local Client = ReplicatedStorage:WaitForChild("Client")
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+
+local ClientRemotes = Client:WaitForChild("ClientRemotes")
+local isLobbyPlace = Shared:WaitForChild("isLobbyPlace")
+
+ClientRemotes = require(ClientRemotes)
+isLobbyPlace = require(isLobbyPlace)
+
+local Players = game:GetService("Players")
+
+local TELEPORTED = false
+local MINIMUM_COUNT = 15
+
+local plr = Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+local pickupFunction = ClientRemotes.candyAcorn.pickupCandyAcorn
+
+local function getDrops()
+
+    local result = filtergc("function", {
+        Name = "start",
+        Source = "ReplicatedStorage.Client.createCandyDrops"
+    }, true)
+
+    if not result then return end
+
+    local drops = getupvalue(result, 6)
+
+    return drops
+end
+
+local function getRoom()
+
+    local PartyPads = game.Workspace:WaitForChild("PartyPads")
+    
+    for _, pad in pairs(PartyPads:GetChildren()) do
+        if pad:GetAttribute("Owner") == nil then
+            return pad
+        end
+    end
+
+    return nil
+end
+
+if isLobbyPlace() then
+    
+    local room = nil
+
+    while true do
+
+        if not room then 
+            room = getRoom()
+            task.wait()
+            continue
+        end
+
+        if not TELEPORTED then
+            hrp:PivotTo(room.Zone.CFrame)
+            TELEPORTED = true
+        end
+        task.wait(1)
+        local owner = room:GetAttribute("Owner")
+        local status = room:GetAttribute("Status")
+        if owner and owner == plr.UserId then
+            if status == "Starting" then continue end
+            ClientRemotes.lobby.updatePlayerAmount.fire(1)
+            ClientRemotes.lobby.createRoom.fire()
+        else
+            ClientRemotes.lobby.leaveGroup.fire()
+            TELEPORTED = false
+            room = nil
+        end
+
+    end
+else
+
+    local drops = getDrops()
+
+    local count = 0
+    
+    repeat
+        count = 0
+        for _, v in pairs(drops) do
+            count += 1
+        end
+        task.wait(1)
+    until count >= MINIMUM_COUNT
+
+    if char and hrp then
+        for id, tbl in pairs(drops) do
+            repeat
+                hrp:PivotTo(tbl.model.WorldPivot)
+                task.wait()
+                pickupFunction.fire(id)
+            until tbl.model.Parent == nil
+        end
+        task.wait(1)
+        ClientRemotes.returnToLobby.fire()
+    end
+end
