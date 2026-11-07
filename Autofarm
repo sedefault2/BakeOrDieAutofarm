@@ -33,6 +33,15 @@ local function getDrops()
 
     if not result then return end
 
+    if type(result) == "table" then
+        result = result[1]
+    end
+
+    if type(result) ~= "function" then 
+        warn(result, "is not a function") 
+        return
+    end
+
     local drops = getupvalue(result, 6)
 
     return drops
