@@ -28,8 +28,9 @@ local function getDrops()
 
     local result = filtergc("function", {
         Name = "start",
+        StartLine = 205,
         ConstantCount = 23,
-        UpvalueCount = 16
+        UpvalueCount = 16,
     }, true)
 
     if not result then return end
